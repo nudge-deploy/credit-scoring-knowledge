@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penilaian Kredit UMKM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0e;--bg2:#181817;--bg3:#222220;--bg4:#2a2a28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8e6df;--muted:#8a8880;--hint:#5a5956;
+  --accent:#c8f55a;--accent2:#8fd87a;
+  --red:#e24b4a;--amber:#ef9f27;--gray-c:#888780;--teal:#5dcaa5;--green:#1d9e75;
+  --font-serif:'DM Serif Display',serif;
+  --font-body:'Figtree',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --r:10px;--r-lg:14px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:11px}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:18px;height:18px}
+.logo-name{font-family:var(--font-serif);font-size:17px;letter-spacing:-0.01em}
+.logo-sub{font-size:10px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.06em;margin-top:1px}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--font-mono);border:1px solid var(--border2);border-radius:99px;padding:5px 13px;background:var(--bg3);transition:all .3s}
+.status-pill.online{color:var(--accent2);border-color:rgba(143,216,122,.25)}
+.status-pill.error{color:var(--red);border-color:rgba(226,75,74,.25)}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--hint);transition:background .3s}
+.status-pill.online .sdot{background:var(--accent2)}
+.status-pill.error .sdot{background:var(--red)}
+
+main{display:grid;grid-template-columns:480px 1fr;overflow:hidden}
+
+/* ── Tabs ── */
+.tabs{display:flex;padding:16px 24px 0;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tab-btn{padding:8px 18px;font-family:var(--font-body);font-size:13px;border:none;border-radius:var(--r) var(--r) 0 0;cursor:pointer;background:transparent;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(200,245,90,.05)}
+.tab-btn:hover:not(.active){color:var(--text);background:var(--bg3)}
+
+/* ── Left panel ── */
+.panel-left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 73px)}
+.panel-scroll{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.panel-scroll::-webkit-scrollbar{width:4px}
+.panel-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── Tab content ── */
+.tab-panel{display:none;padding:20px 24px}
+.tab-panel.active{display:block}
+
+/* ── Document upload cards ── */
+.doc-grid{display:grid;gap:12px}
+.doc-card{border:1px dashed var(--border2);border-radius:var(--r-lg);overflow:hidden;transition:border-color .2s;background:var(--bg3)}
+.doc-card.has-file{border-style:solid;border-color:var(--accent);background:rgba(200,245,90,.03)}
+.doc-card.extracting{border-color:var(--amber);animation:pulse-border 1.5s ease-in-out infinite}
+.doc-card.extracted{border-color:var(--teal);background:rgba(93,202,165,.04)}
+.doc-card.extract-error{border-color:var(--red);background:rgba(226,75,74,.04)}
+
+@keyframes pulse-border{0%,100%{border-color:var(--amber)}50%{border-color:rgba(239,159,39,.3)}}
+
+.doc-card-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+.doc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:var(--bg4);border:1px solid var(--border2)}
+.doc-card.has-file .doc-icon,.doc-card.extracted .doc-icon{background:rgba(200,245,90,.12);border-color:rgba(200,245,90,.3)}
+.doc-card.extracting .doc-icon{background:rgba(239,159,39,.12);border-color:rgba(239,159,39,.3)}
+.doc-card.extract-error .doc-icon{background:rgba(226,75,74,.12);border-color:rgba(226,75,74,.3)}
+.doc-info{flex:1;min-width:0}
+.doc-title{font-size:13px;font-weight:500;color:var(--text)}
+.doc-sub{font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+.doc-status{font-size:11px;padding:3px 9px;border-radius:99px;font-family:var(--font-mono);flex-shrink:0}
+.ds-idle{background:var(--bg4);color:var(--hint)}
+.ds-ready{background:rgba(200,245,90,.15);color:var(--accent)}
+.ds-loading{background:rgba(239,159,39,.15);color:var(--amber)}
+.ds-done{background:rgba(93,202,165,.15);color:var(--teal)}
+.ds-error{background:rgba(226,75,74,.15);color:var(--red)}
+
+.doc-drop{padding:14px;border-top:1px solid var(--border)}
+.drop-zone{border:1px dashed var(--border2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(200,245,90,.04)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-text{font-size:12px;color:var(--muted)}
+.drop-text span{color:var(--accent);font-weight:500}
+
+.doc-preview{padding:0 14px 14px;display:none}
+.doc-card.has-file .doc-preview,.doc-card.extracted .doc-preview,.doc-card.extracting .doc-preview,.doc-card.extract-error .doc-preview{display:block}
+.preview-img{width:100%;border-radius:var(--r);border:1px solid var(--border2);max-height:160px;object-fit:cover;cursor:pointer;transition:transform .15s}
+.preview-img:hover{transform:scale(1.01)}
+
+.extracted-fields{margin-top:10px;background:var(--bg4);border-radius:var(--r);padding:10px 12px;display:none}
+.doc-card.extracted .extracted-fields{display:block}
+.ef-title{font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.ef-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.ef-row{display:flex;flex-direction:column;gap:1px}
+.ef-key{font-size:10px;color:var(--hint);font-family:var(--font-mono)}
+.ef-val{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Manual fields (tab 2) ── */
+.manual-section{margin-bottom:20px}
+.ms-title{font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 0 8px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.field-grid{display:grid;gap:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+.field input,.field select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--font-body);font-size:13px;padding:7px 11px;width:100%;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,245,90,.07)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%238a8880' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;-webkit-appearance:none}
+
+/* ── Submit ── */
+.submit-bar{padding:16px 24px;border-top:1px solid var(--border);background:var(--bg2)}
+.btn-analyze{width:100%;background:var(--accent);color:#0f0f0e;border:none;border-radius:var(--r);font-family:var(--font-body);font-weight:600;font-size:14px;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}
+.btn-analyze:hover{background:#d4ff60}
+.btn-analyze:active{transform:scale(.99)}
+.btn-analyze:disabled{background:var(--bg4);color:var(--hint);cursor:not-allowed;transform:none}
+.btn-secondary{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:var(--r);font-family:var(--font-body);font-size:12px;padding:7px;cursor:pointer;margin-top:7px;transition:all .15s}
+.btn-secondary:hover{color:var(--text);background:var(--bg3)}
+
+/* ── Right panel ── */
+.panel-right{overflow-y:auto;padding:28px 32px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;max-height:calc(100vh - 73px)}
+.panel-right::-webkit-scrollbar{width:4px}
+.panel-right::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── Result states ── */
+.result-idle{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:14px;color:var(--muted);text-align:center}
+.idle-icon{width:60px;height:60px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.idle-title{font-family:var(--font-serif);font-size:21px;opacity:.45}
+.idle-tip{font-size:12px;opacity:.5;max-width:260px;line-height:1.7}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:14px;color:var(--muted)}
+.spinner{width:30px;height:30px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.loading-steps{display:flex;flex-direction:column;gap:5px;margin-top:6px;font-size:12px;font-family:var(--font-mono)}
+.lstep{color:var(--hint);transition:color .3s}
+.lstep.active{color:var(--amber)}
+.lstep.done{color:var(--teal)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Result content ── */
+.result-wrap{display:flex;flex-direction:column;gap:20px}
+
+.verdict-card{border-radius:var(--r-lg);border:1px solid var(--border2);background:var(--bg2);overflow:hidden;animation:fadeUp .4s ease both}
+.verdict-top{height:4px;background:var(--vcolor,var(--accent))}
+.verdict-body{padding:24px 26px}
+.verdict-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.verdict-tag{font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.verdict-name{font-family:var(--font-serif);font-size:24px;color:var(--vcolor,var(--text));line-height:1.2}
+.verdict-badge{width:48px;height:48px;border-radius:50%;border:2px solid var(--vcolor,var(--border2));display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--vcolor,var(--text));flex-shrink:0}
+.verdict-desc{font-size:13px;color:var(--muted);line-height:1.65}
+.conf-label{font-size:10px;font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}
+.conf-track{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.conf-fill{height:100%;border-radius:99px;background:var(--vcolor,var(--accent));width:0;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.conf-pct{font-size:12px;color:var(--vcolor,var(--text));font-family:var(--font-mono);text-align:right;margin-top:4px}
+
+.info-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;animation:fadeUp .4s .08s ease both}
+.info-tile{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.it-label{font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px}
+.it-val{font-size:17px;font-family:var(--font-serif);color:var(--text)}
+
+.prob-block{border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;animation:fadeUp .4s .16s ease both}
+.prob-head{padding:12px 18px;font-size:10px;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg2);border-bottom:1px solid var(--border)}
+.prob-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);transition:background .12s}
+.prob-row:last-child{border-bottom:none}
+.prob-row:hover{background:rgba(255,255,255,.02)}
+.prob-row.winner{background:rgba(255,255,255,.03)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--rc,var(--muted));flex-shrink:0}
+.pname{flex:1;font-size:12px;color:var(--text)}
+.pbar-wrap{width:110px}
+.pbar-bg{height:3px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:99px;background:var(--rc,var(--muted));width:0;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.ppct{width:42px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.ppct.top{color:var(--rc,var(--text));font-weight:500}
+
+/* ── Extracted summary ── */
+.extracted-summary{border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;animation:fadeUp .4s .24s ease both}
+.es-head{padding:12px 18px;font-size:10px;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.es-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.es-item{padding:10px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.es-item:nth-child(2n){border-right:none}
+.es-item:nth-last-child(-n+2){border-bottom:none}
+.es-key{font-size:10px;font-family:var(--font-mono);color:var(--hint)}
+.es-val{font-size:12px;color:var(--text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.disclaimer{font-size:11px;color:var(--muted);padding:12px 14px;border:1px solid var(--border);border-radius:var(--r);line-height:1.65;animation:fadeUp .4s .32s ease both}
+.error-box{background:rgba(226,75,74,.08);border:1px solid rgba(226,75,74,.3);border-radius:var(--r);padding:14px 18px;color:var(--red);font-size:13px;animation:fadeUp .3s ease both}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Image lightbox ── */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:var(--r-lg);border:1px solid var(--border2)}
+
+@media(max-width:840px){
+  main{grid-template-columns:1fr}
+  .panel-left{max-height:none}
+  .panel-right{max-height:none;padding:20px 18px}
+  .info-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L3 6V14L10 18L17 14V6L10 2Z" stroke="#0f0f0e" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M10 7V13M7.5 9.5H12.5" stroke="#0f0f0e" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">Kredit UMKM</div>
+      <div class="logo-sub">Sistem Penilaian Kelayakan</div>
+    </div>
+  </div>
+  <div class="status-pill" id="status-pill">
+    <div class="sdot"></div>
+    <span id="status-text">Memeriksa koneksi...</span>
+  </div>
+</header>
+
+<main>
+<!-- Left panel -->
+<div class="panel-left">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="docs">Upload Dokumen</button>
+    <button class="tab-btn" data-tab="manual">Data Manual</button>
+  </div>
+
+  <div class="panel-scroll">
+    <!-- Tab 1: Document upload -->
+    <div class="tab-panel active" id="tab-docs">
+      <div class="doc-grid" id="doc-grid">
+
+        <!-- KTP -->
+        <div class="doc-card" id="card-ktp" data-doctype="ktp">
+          <div class="doc-card-header">
+            <div class="doc-icon">🪪</div>
+            <div class="doc-info">
+              <div class="doc-title">KTP Pemohon</div>
+              <div class="doc-sub">e-KTP / Kartu Tanda Penduduk</div>
+            </div>
+            <span class="doc-status ds-idle" id="status-ktp">Belum</span>
+          </div>
+          <div class="doc-preview">
+            <img class="preview-img" id="preview-ktp" src="" alt="Preview KTP">
+            <div class="extracted-fields" id="ef-ktp">
+              <div class="ef-title">Hasil Ekstraksi</div>
+              <div class="ef-grid" id="efg-ktp"></div>
+            </div>
+          </div>
+          <div class="doc-drop">
+            <div class="drop-zone" id="dz-ktp">
+              <input type="file" accept="image/*" id="file-ktp" data-doctype="ktp">
+              <div class="drop-text">Klik atau <span>drag & drop</span> gambar KTP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKU -->
+        <div class="doc-card" id="card-sku" data-doctype="sku">
+          <div class="doc-card-header">
+            <div class="doc-icon">📋</div>
+            <div class="doc-info">
+              <div class="doc-title">SKU / NIB Usaha</div>
+              <div class="doc-sub">Surat Keterangan Usaha / NIB OSS</div>
+            </div>
+            <span class="doc-status ds-idle" id="status-sku">Belum</span>
+          </div>
+          <div class="doc-preview">
+            <img class="preview-img" id="preview-sku" src="" alt="Preview SKU">
+            <div class="extracted-fields" id="ef-sku">
+              <div class="ef-title">Hasil Ekstraksi</div>
+              <div class="ef-grid" id="efg-sku"></div>
+            </div>
+          </div>
+          <div class="doc-drop">
+            <div class="drop-zone" id="dz-sku">
+              <input type="file" accept="image/*" id="file-sku" data-doctype="sku">
+              <div class="drop-text">Klik atau <span>drag & drop</span> gambar SKU/NIB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rekening Koran -->
+        <div class="doc-card" id="card-rekening_koran" data-doctype="rekening_koran">
+          <div class="doc-card-header">
+            <div class="doc-icon">🏦</div>
+            <div class="doc-info">
+              <div class="doc-title">Rekening Koran</div>
+              <div class="doc-sub">Min. 3 bulan terakhir</div>
+            </div>
+            <span class="doc-status ds-idle" id="status-rekening_koran">Belum</span>
+          </div>
+          <div class="doc-preview">
+            <img class="preview-img" id="preview-rekening_koran" src="" alt="Preview Rekening Koran">
+            <div class="extracted-fields" id="ef-rekening_koran">
+              <div class="ef-title">Hasil Ekstraksi</div>
+              <div class="ef-grid" id="efg-rekening_koran"></div>
+            </div>
+          </div>
+          <div class="doc-drop">
+            <div class="drop-zone" id="dz-rekening_koran">
+              <input type="file" accept="image/*" id="file-rekening_koran" data-doctype="rekening_koran">
+              <div class="drop-text">Klik atau <span>drag & drop</span> rekening koran</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Laporan Keuangan -->
+        <div class="doc-card" id="card-laporan_keuangan" data-doctype="laporan_keuangan">
+          <div class="doc-card-header">
+            <div class="doc-icon">📊</div>
+            <div class="doc-info">
+              <div class="doc-title">Laporan Keuangan</div>
+              <div class="doc-sub">Laba-rugi bulanan usaha</div>
+            </div>
+            <span class="doc-status ds-idle" id="status-laporan_keuangan">Belum</span>
+          </div>
+          <div class="doc-preview">
+            <img class="preview-img" id="preview-laporan_keuangan" src="" alt="Preview Laporan Keuangan">
+            <div class="extracted-fields" id="ef-laporan_keuangan">
+              <div class="ef-title">Hasil Ekstraksi</div>
+              <div class="ef-grid" id="efg-laporan_keuangan"></div>
+            </div>
+          </div>
+          <div class="doc-drop">
+            <div class="drop-zone" id="dz-laporan_keuangan">
+              <input type="file" accept="image/*" id="file-laporan_keuangan" data-doctype="laporan_keuangan">
+              <div class="drop-text">Klik atau <span>drag & drop</span> laporan keuangan</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /doc-grid -->
+    </div><!-- /tab-docs -->
+
+    <!-- Tab 2: Manual fields -->
+    <div class="tab-panel" id="tab-manual">
+      <div id="manual-form-container"></div>
+    </div>
+  </div><!-- /panel-scroll -->
+
+  <div class="submit-bar">
+    <button class="btn-analyze" id="btn-analyze" disabled>
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <path d="M2.5 7.5h10M9 3.5l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Analisis Kelayakan
+    </button>
+    <button class="btn-secondary" id="btn-reset">Bersihkan semua</button>
+  </div>
+</div><!-- /panel-left -->
+
+<!-- Right panel -->
+<div class="panel-right" id="panel-right">
+  <div class="result-idle">
+    <div class="idle-icon">◎</div>
+    <div class="idle-title">Siap Menganalisis</div>
+    <div class="idle-tip">Upload dokumen pemohon atau isi data manual, lalu klik <strong>Analisis Kelayakan</strong>.</div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lb-img" src="" alt="">
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+const LABEL_COLORS = {
+  'Ditolak otomatis'                : '#e24b4a',
+  'Perlu perbaikan profil'           : '#ef9f27',
+  'Perlu tinjauan komite'            : '#888780',
+  'Disetujui dengan syarat tambahan' : '#5dcaa5',
+  'Disetujui langsung'               : '#1d9e75',
+};
+
+const LABEL_DESC = {
+  'Ditolak otomatis'                : 'Pengajuan tidak dapat diproses. Terdapat catatan kredit bermasalah atau pemohon masuk daftar hitam.',
+  'Perlu perbaikan profil'           : 'Profil usaha belum memenuhi persyaratan minimum. Perbaiki beberapa aspek sebelum mengajukan kembali.',
+  'Perlu tinjauan komite'            : 'Pengajuan memerlukan evaluasi lebih mendalam oleh komite kredit.',
+  'Disetujui dengan syarat tambahan' : 'Dapat diproses dengan persyaratan tambahan seperti agunan pelengkap atau penjamin.',
+  'Disetujui langsung'               : 'Profil pemohon memenuhi seluruh kriteria. Siap diproses ke tahap pencairan.',
+};
+
+const EF_LABELS = {
+  ktp: [['nik','NIK'],['nama_lengkap','Nama'],['tempat_lahir','Tempat lahir'],['tanggal_lahir','Tanggal lahir'],['jenis_kelamin','Kelamin'],['pekerjaan','Pekerjaan'],['status_perkawinan','Status kawin'],['alamat_ktp','Alamat']],
+  sku: [['nomor_sku','Nomor SKU'],['nama_usaha','Nama usaha'],['jenis_usaha','Jenis usaha'],['modal_usaha','Modal usaha'],['berdiri_sejak','Berdiri sejak'],['penerbit','Penerbit']],
+  rekening_koran: [['nama_nasabah','Nasabah'],['nomor_rekening','No. rekening'],['nama_bank','Bank'],['periode_awal','Periode awal'],['periode_akhir','Periode akhir'],['total_kredit','Total kredit'],['total_debit','Total debit'],['rata_saldo_harian','Rata saldo']],
+  laporan_keuangan: [['nama_usaha','Nama usaha'],['periode','Periode'],['total_pendapatan_bulanan','Pendapatan/bln'],['hpp_bulanan','HPP/bln'],['laba_kotor_bulanan','Laba kotor/bln'],['biaya_operasional_bulanan','Biaya ops/bln'],['rata_laba_bersih_bulanan','Laba bersih/bln']],
+};
+
+// State
+const state = {
+  files: {},       // doctype → File
+  extracted: {},   // doctype → extracted data
+  mlFields: {},    // merged ML fields from extractions
+  manualFields: {}, // from manual form
+};
+
+// ── Tabs ─────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── File input handlers ───────────────────────────────────────────
+document.querySelectorAll('.doc-card').forEach(card => {
+  const dt = card.dataset.doctype;
+  const fileInput = card.querySelector('input[type=file]');
+  const dz = card.querySelector('.drop-zone');
+
+  fileInput.addEventListener('change', e => handleFile(e.target.files[0], dt));
+
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], dt);
+  });
+});
+
+function handleFile(file, doctype) {
+  if (!file) return;
+  state.files[doctype] = file;
+
+  // Preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(`preview-${doctype}`);
+    img.src = e.target.result;
+    img.onclick = () => openLightbox(e.target.result);
+  };
+  reader.readAsDataURL(file);
+
+  setCardState(doctype, 'has-file', 'ready', 'Siap');
+  updateAnalyzeBtn();
+  extractDoc(file, doctype);
+}
+
+async function extractDoc(file, doctype) {
+  setCardState(doctype, 'extracting', 'loading', 'Mengekstrak...');
+
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+  fd.append('doc_type', doctype);
+
+  try {
+    const r = await fetch(`${API}/extract`, { method: 'POST', body: fd });
+    const data = await r.json();
+
+    if (data.success) {
+      state.extracted[doctype] = data.data;
+      Object.assign(state.mlFields, data.ml_fields || {});
+      setCardState(doctype, 'extracted', 'done', 'Selesai');
+      renderExtractedFields(doctype, data.data);
+    } else {
+      setCardState(doctype, 'extract-error', 'error', 'Gagal');
+      console.warn(`Extraction error (${doctype}):`, data.error);
+    }
+  } catch (e) {
+    setCardState(doctype, 'extract-error', 'error', 'Error');
+    console.error(e);
+  }
+}
+
+function setCardState(doctype, cardClass, statusClass, statusText) {
+  const card   = document.getElementById(`card-${doctype}`);
+  const status = document.getElementById(`status-${doctype}`);
+
+  card.className = `doc-card ${cardClass}`;
+  status.className = `doc-status ds-${statusClass}`;
+  status.textContent = statusText;
+}
+
+function renderExtractedFields(doctype, data) {
+  const grid = document.getElementById(`efg-${doctype}`);
+  const keys = EF_LABELS[doctype] || Object.keys(data).map(k => [k, k]);
+  grid.innerHTML = keys.map(([k, label]) => {
+    const val = data[k] || '—';
+    return `<div class="ef-row">
+      <div class="ef-key">${label}</div>
+      <div class="ef-val" title="${val}">${val}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Manual form ───────────────────────────────────────────────────
+async function buildManualForm() {
+  let fields;
+  try {
+    const r = await fetch(`${API}/fields`);
+    fields = await r.json();
+  } catch { return; }
+
+  const groups = {};
+  fields.forEach(f => { if (!groups[f.group]) groups[f.group] = []; groups[f.group].push(f); });
+
+  const container = document.getElementById('manual-form-container');
+  Object.entries(groups).forEach(([grp, grpFields]) => {
+    const sec = document.createElement('div');
+    sec.className = 'manual-section';
+    sec.innerHTML = `<div class="ms-title">${grp}</div>
+      <div class="field-grid">
+        ${grpFields.map(f => renderManualField(f)).join('')}
+      </div>`;
+    container.appendChild(sec);
+  });
+
+  // Watch changes
+  container.querySelectorAll('input,select').forEach(el => {
+    el.addEventListener('input', () => {
+      state.manualFields[el.name] = el.type === 'number' ? (parseFloat(el.value) || 0) : el.value;
+    });
+  });
+}
+
+function renderManualField(f) {
+  const id = `mf_${f.key}`;
+  if (f.type === 'select') {
+    const opts = f.options.map(o => `<option value="${o}" ${o==f.default?'selected':''}>${
+      f.key==='kolektibilitas_slik' ? `Kol ${o} — ${['','Lancar','DPK','Kurang Lancar','Diragukan','Macet'][o]}` :
+      f.key==='tenor_bulan' ? `${o} bulan` : o
+    }</option>`).join('');
+    return `<div class="field"><label for="${id}">${f.label}</label>
+      <select id="${id}" name="${f.key}">${opts}</select></div>`;
+  }
+  return `<div class="field"><label for="${id}">${f.label}</label>
+    <input type="number" id="${id}" name="${f.key}"
+      value="${f.default}" min="${f.min??0}" step="${(f.key.includes('ratio')||f.key==='dti_ratio')?'0.01':'1'}"></div>`;
+}
+
+// ── Analyze ───────────────────────────────────────────────────────
+function updateAnalyzeBtn() {
+  const hasDoc  = Object.keys(state.files).length > 0;
+  const hasForm = Object.keys(state.manualFields).length > 0;
+  document.getElementById('btn-analyze').disabled = !(hasDoc || hasForm);
+}
+
+document.getElementById('btn-analyze').addEventListener('click', analyze);
+document.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey)&&e.key==='Enter') analyze(); });
+
+async function analyze() {
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true;
+  showLoading();
+
+  try {
+    const hasExtracted = Object.keys(state.extracted).length > 0;
+    const hasFiles = Object.keys(state.files).length > 0;
+
+    if (hasFiles) {
+      // Use /extract-and-predict with all uploaded files
+      const fd = new FormData();
+      for (const [dt, file] of Object.entries(state.files)) {
+        fd.append(dt, file, file.name);
+      }
+      // Merge manual fields as override
+      const merged = { ...state.mlFields, ...state.manualFields };
+      fd.append('manual_fields', JSON.stringify(merged));
+
+      const r    = await fetch(`${API}/extract-and-predict`, { method:'POST', body: fd });
+      const data = await r.json();
+
+      if (!r.ok || !data.success) {
+        showError(data.error || JSON.stringify(data.errors));
+      } else {
+        showResult(data.prediction, data.ml_fields || {}, data.extractions || {});
+      }
+    } else {
+      // Manual only → /predict
+      const r    = await fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.manualFields),
+      });
+      const data = await r.json();
+      if (!r.ok || data.error) showError(data.error);
+      else showResult(data, state.manualFields, {});
+    }
+  } catch(e) {
+    showError('Tidak dapat terhubung ke API. Pastikan app.py berjalan.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────
+document.getElementById('btn-reset').addEventListener('click', () => {
+  state.files = {}; state.extracted = {}; state.mlFields = {};
+  document.querySelectorAll('.doc-card').forEach(c => {
+    c.className = 'doc-card';
+    const dt = c.dataset.doctype;
+    document.getElementById(`status-${dt}`).className = 'doc-status ds-idle';
+    document.getElementById(`status-${dt}`).textContent = 'Belum';
+    document.getElementById(`preview-${dt}`).src = '';
+    document.getElementById(`efg-${dt}`).innerHTML = '';
+    const fi = document.getElementById(`file-${dt}`);
+    fi.value = '';
+  });
+  updateAnalyzeBtn();
+  showIdle();
+});
+
+// ── Render result ─────────────────────────────────────────────────
+function showIdle() {
+  document.getElementById('panel-right').innerHTML = `
+    <div class="result-idle">
+      <div class="idle-icon">◎</div>
+      <div class="idle-title">Siap Menganalisis</div>
+      <div class="idle-tip">Upload dokumen pemohon atau isi data manual, lalu klik <strong>Analisis Kelayakan</strong>.</div>
+    </div>`;
+}
+
+function showLoading() {
+  const steps = [
+    ['step1','Mengekstrak data dokumen...'],
+    ['step2','Menjalankan preprocessing...'],
+    ['step3','Menghitung credit score...'],
+    ['step4','Menghasilkan rekomendasi...'],
+  ];
+  document.getElementById('panel-right').innerHTML = `
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-steps">
+        ${steps.map(([id,txt],i) => `<div class="lstep ${i===0?'active':''}" id="${id}">${i===0?'→':' '} ${txt}</div>`).join('')}
+      </div>
+    </div>`;
+  // Animate steps
+  steps.forEach(([id], i) => {
+    if (i === 0) return;
+    setTimeout(() => {
+      const prev = document.getElementById(steps[i-1][0]);
+      const cur  = document.getElementById(id);
+      if (prev) prev.classList.replace('active','done');
+      if (cur)  cur.classList.add('active');
+    }, i * 900);
+  });
+}
+
+function showError(msg) {
+  document.getElementById('panel-right').innerHTML =
+    `<div class="error-box">⚠ ${msg}</div>`;
+}
+
+function showResult(pred, mlFields, extractions) {
+  const color = pred.warna || '#888780';
+  const probs = Object.entries(pred.probabilitas);
+  const topProb = probs[0][1];
+  const desc  = LABEL_DESC[pred.label] || '';
+
+  // Prob rows
+  const labelOrder = ['Ditolak otomatis','Perlu perbaikan profil','Perlu tinjauan komite','Disetujui dengan syarat tambahan','Disetujui langsung'];
+  let probRows = '';
+  probs.forEach(([lbl, prob], i) => {
+    const rc = LABEL_COLORS[lbl] || '#888780';
+    probRows += `<div class="prob-row ${i===0?'winner':''}" style="--rc:${rc}">
+      <div class="pdot"></div>
+      <div class="pname">${lbl}</div>
+      <div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" data-w="${(prob*100).toFixed(1)}"></div></div></div>
+      <div class="ppct ${i===0?'top':''}">${(prob*100).toFixed(1)}%</div>
+    </div>`;
+  });
+
+  // Extracted summary
+  let esSummary = '';
+  const esEntries = [];
+  for (const [dt, res] of Object.entries(extractions)) {
+    if (!res?.success || !res?.data) continue;
+    const icons = {ktp:'🪪',sku:'📋',rekening_koran:'🏦',laporan_keuangan:'📊'};
+    const titles = {ktp:'KTP',sku:'SKU/NIB',rekening_koran:'Rekening Koran',laporan_keuangan:'Lap. Keuangan'};
+    const keys = EF_LABELS[dt]?.slice(0,4) || [];
+    keys.forEach(([k,label]) => {
+      const val = res.data[k];
+      if (val) esEntries.push([`${icons[dt]} ${label}`, val]);
+    });
+  }
+  if (esEntries.length > 0) {
+    esSummary = `<div class="extracted-summary">
+      <div class="es-head"><span>Data Terekstraksi</span><span style="color:var(--teal);font-size:10px">${Object.keys(extractions).filter(k=>extractions[k]?.success).length} dokumen diproses</span></div>
+      <div class="es-grid">
+        ${esEntries.map(([k,v]) => `<div class="es-item"><div class="es-key">${k}</div><div class="es-val" title="${v}">${v}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Info tiles
+  const dti   = parseFloat(mlFields.dti_ratio || 0).toFixed(2);
+  const plafon = formatRp(mlFields.plafon_diajukan || 0);
+  const tenor  = mlFields.tenor_bulan || '—';
+
+  document.getElementById('panel-right').innerHTML = `
+    <div class="result-wrap">
+
+      <div class="verdict-card" style="--vcolor:${color}">
+        <div class="verdict-top"></div>
+        <div class="verdict-body">
+          <div class="verdict-row">
+            <div>
+              <div class="verdict-tag">Rekomendasi Sistem</div>
+              <div class="verdict-name">${pred.label}</div>
+            </div>
+            <div class="verdict-badge">${pred.ikon}</div>
+          </div>
+          ${desc ? `<div class="verdict-desc">${desc}</div>` : ''}
+          <div class="conf-label">Confidence</div>
+          <div class="conf-track"><div class="conf-fill" data-w="${(topProb*100).toFixed(1)}"></div></div>
+          <div class="conf-pct">${(topProb*100).toFixed(1)}%</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-tile"><div class="it-label">DTI Ratio</div><div class="it-val">${dti}</div></div>
+        <div class="info-tile"><div class="it-label">Plafon</div><div class="it-val" style="font-size:14px">${plafon}</div></div>
+        <div class="info-tile"><div class="it-label">Tenor</div><div class="it-val">${tenor} bln</div></div>
+      </div>
+
+      <div class="prob-block">
+        <div class="prob-head">Distribusi probabilitas per kelas</div>
+        ${probRows}
+      </div>
+
+      ${esSummary}
+
+      <div class="disclaimer">
+        ⓘ Rekomendasi ini dihasilkan secara otomatis oleh model machine learning sebagai seleksi awal.
+        Keputusan final tetap berada di tangan analis dan komite kredit.
+        Model: <strong>ML Classifier</strong> · Fitur: <strong>${pred.fitur_count}</strong>
+      </div>
+    </div>`;
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('[data-w]').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  }));
+}
+
+function formatRp(n) {
+  n = parseFloat(n) || 0;
+  if (n >= 1e9) return 'Rp '+(n/1e9).toFixed(1)+' M';
+  if (n >= 1e6) return 'Rp '+(n/1e6).toFixed(0)+' jt';
+  if (n >= 1e3) return 'Rp '+(n/1e3).toFixed(0)+' rb';
+  return 'Rp '+n;
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ── Health check ──────────────────────────────────────────────────
+async function checkHealth() {
+  const pill = document.getElementById('status-pill');
+  const txt  = document.getElementById('status-text');
+  try {
+    const r = await fetch(`${API}/`, { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      pill.className = 'status-pill online';
+      txt.textContent = `API online · ${d.model}`;
+    } else throw new Error();
+  } catch {
+    pill.className = 'status-pill error';
+    txt.textContent = 'API offline — jalankan app.py';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+checkHealth();
+setInterval(checkHealth, 15000);
+buildManualForm();
+</script>
+</body>
+</html>
