@@ -19,6 +19,9 @@ python app.py
 Perintah ini akan memulai pemrosesan data atau server backend yang diperlukan oleh aplikasi.
 ### 3. Mengakses Interface
 Setelah backend berjalan, Anda dapat melihat hasil atau dashboard aplikasi dengan cara:
+
 a. Navigasi ke folder proyek.
+
 b. Temukan file index.html.
+
 c. Klik kanan pada file tersebut dan pilih Open with Browser (seperti Google Chrome, Microsoft Edge, atau Firefox).
