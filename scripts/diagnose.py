@@ -1,8 +1,8 @@
 """
 diagnose.py — Script Diagnosis Sistem Kredit UMKM
 ==================================================
-Jalankan di folder proyek Anda:
-    python diagnose.py
+Jalankan dari root folder proyek:
+    python scripts/diagnose.py
 
 Script ini akan mengecek:
   1. Versi Python
@@ -11,7 +11,7 @@ Script ini akan mengecek:
   4. ANTHROPIC_API_KEY (environment variable & .env file)
   5. Konektivitas ke Anthropic API (text)
   6. Konektivitas ke Anthropic API (vision/image)
-  7. Struktur folder sample_docs/
+  7. Struktur folder data/sample_docs/
 """
 
 import os, sys, json, base64, traceback
@@ -71,9 +71,9 @@ if missing:
 # ── 3. Model artifacts ───────────────────────────────────────────
 section("3. File model ML")
 ARTIFACTS = [
-    "model_artifacts/model_kredit_umkm.pkl",
-    "model_artifacts/scaler_kredit_umkm.pkl",
-    "model_artifacts/model_metadata.json",
+    "backend/model_artifacts/model_kredit_umkm.pkl",
+    "backend/model_artifacts/scaler_kredit_umkm.pkl",
+    "backend/model_artifacts/model_metadata.json",
 ]
 all_artifacts_ok = True
 for path in ARTIFACTS:
@@ -212,12 +212,12 @@ else:
         fail(f"Vision test gagal: {type(e).__name__}: {e}")
 
 # ── 7. Sample docs ───────────────────────────────────────────────
-section("7. Dokumen dummy (sample_docs/)")
+section("7. Dokumen dummy (data/sample_docs/)")
 SAMPLE_DOCS = [
-    ("sample_docs/ktp_budi_santoso.png",         "KTP"),
-    ("sample_docs/sku_toko_sembako.png",          "SKU"),
-    ("sample_docs/rekening_koran_bri.png",        "Rekening Koran"),
-    ("sample_docs/laporan_keuangan_sembako.png",  "Laporan Keuangan"),
+    ("data/sample_docs/ktp_budi_santoso.png",         "KTP"),
+    ("data/sample_docs/sku_toko_sembako.png",          "SKU"),
+    ("data/sample_docs/rekening_koran_bri.png",        "Rekening Koran"),
+    ("data/sample_docs/laporan_keuangan_sembako.png",  "Laporan Keuangan"),
 ]
 for path, label in SAMPLE_DOCS:
     if os.path.exists(path):
@@ -230,15 +230,15 @@ for path, label in SAMPLE_DOCS:
 section("8. Test extraction dokumen KTP")
 if not api_key:
     warn("Dilewati — tidak ada API key.")
-elif not os.path.exists("sample_docs/ktp_budi_santoso.png"):
+elif not os.path.exists("data/sample_docs/ktp_budi_santoso.png"):
     warn("Dilewati — file sample KTP tidak ditemukan.")
-elif not os.path.exists("extractor.py"):
-    warn("Dilewati — extractor.py tidak ditemukan di folder ini.")
+elif not os.path.exists("backend/extractor.py"):
+    warn("Dilewati — backend/extractor.py tidak ditemukan.")
 else:
     try:
-        sys.path.insert(0, os.getcwd())
+        sys.path.insert(0, os.path.join(os.getcwd(), "backend"))
         from extractor import extract_document
-        with open("sample_docs/ktp_budi_santoso.png", "rb") as f:
+        with open("data/sample_docs/ktp_budi_santoso.png", "rb") as f:
             img_bytes = f.read()
         info("Mengirim gambar KTP ke Claude Vision API...")
         result = extract_document(img_bytes, "ktp", "image/png")

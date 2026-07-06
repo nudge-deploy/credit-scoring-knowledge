@@ -1,0 +1,17 @@
+.git
+.gitignore
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.local
+data/sample_docs
+notebooks/umkm_kredit_ml.ipynb
+data/umkm_kredit_training_data.csv
+scripts/diagnose.py
+docs
+node_modules
+.venv
+venv
+*.egg-info

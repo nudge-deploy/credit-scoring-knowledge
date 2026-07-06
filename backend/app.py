@@ -7,16 +7,19 @@ app.py — API Kredit UMKM dengan Document Extraction
 Endpoint:
   GET  /              serve index.html (halaman utama)
   GET  /health        health check API
+  GET  /version       app version & status info
   POST /predict       inferensi dari field JSON
   GET  /fields        definisi field form
   POST /extract       ekstrak dokumen (multipart image upload)
   POST /extract-and-predict   upload semua dokumen → langsung predict
 """
 
-import json, os, warnings
+import json, os, sys, warnings
 import joblib, numpy as np, pandas as pd
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from extractor import extract_document
 
 warnings.filterwarnings("ignore")
@@ -27,6 +30,14 @@ CORS(app)
 # ── Load artefak ─────────────────────────────────────────────────
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 ARTIFACTS = os.path.join(BASE_DIR, "model_artifacts")
+
+# ── Load version ──────────────────────────────────────────────────
+try:
+    with open(os.path.join(BASE_DIR, "VERSION")) as f:
+        APP_VERSION = f.read().strip()
+except Exception as e:
+    APP_VERSION = "unknown"
+    print(f"⚠️  Versi tidak ditemukan: {e}")
 
 try:
     model  = joblib.load(os.path.join(ARTIFACTS, "model_kredit_umkm.pkl"))
@@ -154,6 +165,17 @@ def health():
         "model"     : metadata["model_name"],
         "f1_macro"  : metadata["test_f1_macro"],
         "n_features": metadata["n_features"],
+    })
+
+
+# ── Version check ─────────────────────────────────────────────────
+@app.route("/version", methods=["GET"])
+def version():
+    return jsonify({
+        "app_version": APP_VERSION,
+        "model_name": metadata["model_name"] if metadata else "unknown",
+        "environment": "production" if os.environ.get("VERCEL") else "development",
+        "api_ready": model is not None,
     })
 
 

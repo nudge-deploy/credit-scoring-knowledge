@@ -769,11 +769,14 @@ async function checkHealth() {
   const pill = document.getElementById('status-pill');
   const txt  = document.getElementById('status-text');
   try {
-    const r = await fetch(`${API}/`, { signal: AbortSignal.timeout(3000) });
-    const d = await r.json();
-    if (d.status === 'ok') {
+    const healthR = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    const versionR = await fetch(`${API}/version`, { signal: AbortSignal.timeout(3000) });
+    const health = await healthR.json();
+    const version = await versionR.json();
+    
+    if (health.status === 'ok') {
       pill.className = 'status-pill online';
-      txt.textContent = `API online · ${d.model}`;
+      txt.textContent = `v${version.app_version} · ${version.model_name} · Online`;
     } else throw new Error();
   } catch {
     pill.className = 'status-pill error';
