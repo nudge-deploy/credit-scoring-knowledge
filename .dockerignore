@@ -1,0 +1,17 @@
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+.gitignore
+.DS_Store
+.env
+.vercel
+.vercelignore
+.claude
+data
+notebooks
+docs
+*.ipynb
+README.md
+render.yaml
+vercel.json
