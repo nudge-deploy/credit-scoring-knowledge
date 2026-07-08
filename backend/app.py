@@ -155,6 +155,12 @@ def serve_index():
     return send_from_directory(BASE_DIR, "index.html")
 
 
+# ── Serve aset statis (logo, dsb) ─────────────────────────────────
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "assets"), filename)
+
+
 # ── Health check (pindah ke /health agar "/" bebas untuk HTML) ───
 @app.route("/health", methods=["GET"])
 def health():
